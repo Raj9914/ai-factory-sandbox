@@ -1,0 +1,4 @@
+# Verification commands the AI factory runs (inside its Docker sandbox) before review.
+verify:
+  - {name: install, run: "python3 -m venv .venv && .venv/bin/pip install -q pytest", category: install}
+  - {name: pytest, run: ".venv/bin/python -m pytest -q", category: test}

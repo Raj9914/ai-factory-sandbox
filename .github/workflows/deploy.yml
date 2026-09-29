@@ -1,0 +1,21 @@
+name: deploy
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "staging or production"
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # The GitHub Environment gates this job. "production" has required reviewers,
+    # so GitHub holds the run until a human approves it in the Actions UI.
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Deploying $(git rev-parse --short HEAD) to ${{ inputs.environment }} (sandbox: no real target)"
