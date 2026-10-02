@@ -7,6 +7,8 @@ def handle(path: str) -> tuple[int, dict]:
     """Route a GET path to (status, json_body). Pure function so it is trivial to test."""
     if path == "/":
         return 200, {"service": "ai-factory-sandbox"}
+    if path == "/health":
+        return 200, {"status": "ok"}
     return 404, {"error": "not found"}
 
 
