@@ -7,3 +7,7 @@ def test_root():
 
 def test_unknown_path():
     assert handle("/nope")[0] == 404
+
+
+def test_health():
+    assert handle("/health") == (200, {"status": "ok"})
