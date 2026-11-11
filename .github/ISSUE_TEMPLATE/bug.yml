@@ -1,0 +1,23 @@
+name: Ship48 bug
+description: Report a reproducible defect
+title: "[BUG] "
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps and evidence
+    validations:
+      required: true
