@@ -1,0 +1,20 @@
+name: factory-docs
+on:
+  pull_request:
+    paths: ["skills/**", ".agents/skills/**", ".claude/skills/**", "chatgpt-plugin/skills/**", "docs/**", "scripts/**", "CLAUDE.md", "AGENTS.md", "README.md"]
+  push:
+    branches: [main]
+    paths: ["skills/**", ".agents/skills/**", ".claude/skills/**", "chatgpt-plugin/skills/**", "docs/**", "scripts/**", "CLAUDE.md", "AGENTS.md", "README.md"]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/validate_factory.py
+      - run: python scripts/sync_skills.py --check

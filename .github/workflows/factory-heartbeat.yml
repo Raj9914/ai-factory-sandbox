@@ -1,0 +1,42 @@
+name: ship48-queue-heartbeat
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: read
+concurrency:
+  group: ship48-queue-heartbeat
+  cancel-in-progress: false
+jobs:
+  queue-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read and report ready queue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh issue list --repo "$GH_REPO" --state open --json number,title,labels,updatedAt --limit 100 > /tmp/issues.json
+          python - <<'PY'
+          import json, os
+          rows=json.load(open("/tmp/issues.json"))
+          ready=[]
+          for issue in rows:
+              names=[x["name"] for x in issue["labels"]]
+              if "status:ready" in names:
+                  owner=next((x for x in names if x.startswith("agent:")), "UNASSIGNED")
+                  ready.append((issue["number"], issue["title"], owner))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("## Ship48 queue heartbeat\n\n")
+              f.write("Queue-only report. No agent is invoked by this workflow.\n\n")
+              f.write(f"Ready issues: **{len(ready)}**\n\n")
+              if ready:
+                  f.write("| Issue | Title | Owner |\n|---|---|---|\n")
+                  for n,t,o in ready:
+                      f.write(f"| #{n} | {t} | {o} |\n")
+              else:
+                  f.write("No issues are labelled status:ready.\n")
+          PY

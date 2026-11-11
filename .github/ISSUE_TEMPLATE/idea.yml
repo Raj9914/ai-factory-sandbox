@@ -1,0 +1,30 @@
+name: Ship48 idea
+description: Propose an app or game experiment
+title: "[IDEA] "
+labels: ["type:idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: One sentence describing the app or game.
+    validations:
+      required: true
+  - type: textarea
+    id: user
+    attributes:
+      label: Target user and need
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and assumptions
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Smallest MVP and 48-hour success signal
+    validations:
+      required: true
