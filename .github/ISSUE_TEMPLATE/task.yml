@@ -1,7 +1,7 @@
 name: Ship48 task
 description: Create an owned, testable factory task
 title: "[TASK] "
-labels: ["status:proposed"]
+labels: ["status:proposed", "type:task"]
 body:
   - type: dropdown
     id: owner

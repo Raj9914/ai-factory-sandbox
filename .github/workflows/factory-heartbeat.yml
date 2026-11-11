@@ -1,14 +1,14 @@
 name: ship48-queue-heartbeat
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/30 * * * *"   # queue report only; see docs/decision-records/0003-five-minute-heartbeat.md
   workflow_dispatch:
 permissions:
   contents: read
   issues: read
 concurrency:
   group: ship48-queue-heartbeat
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   queue-report:
     runs-on: ubuntu-latest
@@ -18,25 +18,38 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          LIMIT: "1000"
         run: |
-          gh issue list --repo "$GH_REPO" --state open --json number,title,labels,updatedAt --limit 100 > /tmp/issues.json
-          python - <<'PY'
-          import json, os
-          rows=json.load(open("/tmp/issues.json"))
-          ready=[]
+          gh issue list --repo "$GH_REPO" --state open --label "status:ready" \
+            --json number,title,labels,updatedAt --limit "$LIMIT" > "$RUNNER_TEMP/issues.json"
+          python3 - "$RUNNER_TEMP/issues.json" <<'PY'
+          import json, os, sys
+          rows = json.load(open(sys.argv[1]))
+          limit = int(os.environ["LIMIT"])
+
+          def cell(text):
+              # Issue titles are untrusted; keep them from breaking the Markdown table.
+              return text.replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ")
+
+          ready = []
           for issue in rows:
-              names=[x["name"] for x in issue["labels"]]
-              if "status:ready" in names:
-                  owner=next((x for x in names if x.startswith("agent:")), "UNASSIGNED")
-                  ready.append((issue["number"], issue["title"], owner))
+              names = [x["name"] for x in issue["labels"]]
+              owners = [x for x in names if x.startswith("agent:")]
+              owner = owners[0] if len(owners) == 1 else ("CONFLICT: " + ", ".join(owners) if owners else "UNASSIGNED")
+              ready.append((issue["number"], issue["title"], owner, issue["updatedAt"]))
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
               f.write("## Ship48 queue heartbeat\n\n")
               f.write("Queue-only report. No agent is invoked by this workflow.\n\n")
               f.write(f"Ready issues: **{len(ready)}**\n\n")
+              if len(rows) >= limit:
+                  f.write(f"> Warning: result hit the {limit}-issue limit; the list may be incomplete.\n\n")
               if ready:
-                  f.write("| Issue | Title | Owner |\n|---|---|---|\n")
-                  for n,t,o in ready:
-                      f.write(f"| #{n} | {t} | {o} |\n")
+                  f.write("| Issue | Title | Owner | Updated |\n|---|---|---|---|\n")
+                  for n, t, o, u in ready:
+                      f.write(f"| #{n} | {cell(t)} | {o} | {u} |\n")
               else:
                   f.write("No issues are labelled status:ready.\n")
+          bad = [r for r in ready if not r[2].startswith("agent:")]
+          if bad:
+              print(f"::warning::{len(bad)} ready issue(s) without exactly one agent:* owner label")
           PY

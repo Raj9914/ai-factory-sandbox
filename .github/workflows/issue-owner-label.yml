@@ -1,0 +1,39 @@
+name: issue-owner-label
+# The task form's "Owner" dropdown only writes text into the issue body.
+# This turns that choice into exactly one agent:* label, which the heartbeat reads.
+on:
+  issues:
+    types: [opened, edited]
+permissions:
+  issues: write
+concurrency:
+  group: issue-owner-label-${{ github.event.issue.number }}
+  cancel-in-progress: true
+jobs:
+  label-owner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    # Only trusted authors can assign work through the form; outside reporters cannot route tasks to agents.
+    if: contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)
+    steps:
+      - uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        with:
+          script: |
+            const ALLOWED = ["agent:chatgpt", "agent:claude", "agent:codex", "agent:human"];
+            const issue = context.payload.issue;
+            const body = issue.body || "";
+            // Issue forms render as "### Owner\n\n<value>". The body is untrusted, so accept allowlisted values only.
+            const match = body.match(/^###\s+Owner\s*\r?\n\s*\r?\n?\s*(\S+)\s*$/m);
+            if (!match) { core.info("No Owner field; nothing to do."); return; }
+            const owner = match[1];
+            if (!ALLOWED.includes(owner)) { core.warning(`Ignoring unknown owner value: ${owner}`); return; }
+            const current = issue.labels.map(l => l.name);
+            const { owner: repoOwner, repo } = context.repo;
+            for (const name of current.filter(n => n.startsWith("agent:") && n !== owner)) {
+              await github.rest.issues.removeLabel({ owner: repoOwner, repo, issue_number: issue.number, name });
+              core.info(`Removed ${name}`);
+            }
+            if (!current.includes(owner)) {
+              await github.rest.issues.addLabels({ owner: repoOwner, repo, issue_number: issue.number, labels: [owner] });
+              core.info(`Added ${owner}`);
+            }
