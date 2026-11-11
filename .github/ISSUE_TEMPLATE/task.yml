@@ -1,0 +1,30 @@
+name: Ship48 task
+description: Create an owned, testable factory task
+title: "[TASK] "
+labels: ["status:proposed"]
+body:
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner
+      options: ["agent:chatgpt", "agent:claude", "agent:codex", "agent:human"]
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective and context
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: verify
+    attributes:
+      label: Verification and deliverables
+    validations:
+      required: true
