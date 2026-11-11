@@ -9,7 +9,7 @@
 Ideas stall between research, product definition, design, implementation, QA and launch. Multiple agents create duplicated work, unclear ownership, weak verification and uncontrolled spend.
 
 ## Vision
-An auditable factory taking one approved idea through discovery, editable design, isolated implementation, independent review, beta exposure and CONTINUE/PIVOT/KILL/INCONCLUSIVE decision.
+An auditable factory taking one approved idea through discovery, editable design, isolated implementation, independent review, beta exposure and BUILD/PIVOT/KILL/INCONCLUSIVE decision.
 
 ## Jobs
 Human: direction, scope/budget/production approvals, final decision.

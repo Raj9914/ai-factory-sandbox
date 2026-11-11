@@ -13,7 +13,7 @@ Clock starts when owner approves the idea and freezes MVP.
 | 36–42h | Fix | Critical fixes, regression |
 | 42–48h | Decision | Evidence/cost report |
 
-At hour 24, cut scope if core journey is not usable. At hour 48 choose CONTINUE, PIVOT, KILL or INCONCLUSIVE.
+At hour 24, cut scope if core journey is not usable. At hour 48 choose exactly one final verdict: BUILD, PIVOT, KILL or INCONCLUSIVE. These are the only final experiment verdicts. Record hour-24 and hour-48 decisions with docs/templates/HOUR_24_DECISION_TEMPLATE.md and docs/templates/HOUR_48_DECISION_TEMPLATE.md.
 
 Define activation before launch. Record numerator, denominator, window and acquisition source. Games: meaningful sessions, loops completed, replay. Apps: primary task completion and return use. Small samples are directional only.
 

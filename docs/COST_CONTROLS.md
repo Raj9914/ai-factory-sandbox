@@ -7,3 +7,5 @@ Per run: wall-clock timeout, repair cap, max parallel jobs, token/API budget whe
 Pilot hypotheses: one build/product; max 3 repairs; 30-min task timeout; USD 5/task and USD 25/experiment planning caps. Not provider-enforced; configure actual hard limits separately.
 
 Report actual API/cloud spend, duration and tokens only when available. Stop on exhausted cap, unknown expensive action cost, repeated same failure or unattributed cloud spend.
+
+Record actual spend per run in docs/templates/COST_LOG_TEMPLATE.md (copied into the product repo). Set provider hard limits per docs/runbooks/AGENT_ONBOARDING_AND_CREDENTIALS.md.
