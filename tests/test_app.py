@@ -4,7 +4,7 @@ import threading
 
 import pytest
 
-from app import handle, serve
+from app import handle, read_version, serve
 
 
 def test_root():
@@ -22,6 +22,27 @@ def test_health():
 @pytest.mark.parametrize("path", ["/health?probe=1", "/health#x", "/health?a=1&b=2"])
 def test_health_ignores_query_and_fragment(path):
     assert handle(path) == (200, {"status": "ok"})
+
+
+def test_version():
+    assert handle("/version") == (200, {"version": "0.1.0"})
+
+
+def test_version_ignores_query():
+    assert handle("/version?x=1") == (200, {"version": "0.1.0"})
+
+
+def test_read_version_uses_project_section(tmp_path):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[tool.other]\nversion = "9.9.9"\n\n[project]\nname = "x"\nversion = "1.2.3"\n')
+    assert read_version(pyproject) == "1.2.3"
+
+
+def test_read_version_missing_raises(tmp_path):
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nname = "x"\n')
+    with pytest.raises(ValueError):
+        read_version(pyproject)
 
 
 @pytest.fixture
@@ -55,6 +76,20 @@ def test_http_get_unknown_is_json_404(server):
     resp, body = request(server, "GET", "/nope")
     assert resp.status == 404
     assert json.loads(body) == {"error": "not found"}
+
+
+def test_http_get_version(server):
+    resp, body = request(server, "GET", "/version")
+    assert resp.status == 200
+    assert resp.getheader("Content-Type") == "application/json"
+    assert json.loads(body) == {"version": "0.1.0"}
+
+
+def test_http_head_version_has_headers_but_no_body(server):
+    resp, body = request(server, "HEAD", "/version")
+    assert resp.status == 200
+    assert body == b""
+    assert int(resp.getheader("Content-Length")) == len(json.dumps({"version": "0.1.0"}).encode())
 
 
 def test_http_head_has_headers_but_no_body(server):
