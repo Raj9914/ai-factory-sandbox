@@ -1,0 +1,39 @@
+name: Ship48 decision
+description: Ask for a human decision with options, a recommendation and trade-offs
+title: "[DECISION] "
+# Decisions are owned by a human and start as proposed. Only a human applies status:ready.
+labels: ["type:decision", "agent:human", "status:proposed"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when work is blocked on a choice only a human can make.
+        Do not put secrets or confidential product details in this issue.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: The decision needed, in one or two sentences, plus any deadline.
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options
+      description: Each realistic option, including "do nothing" when it applies.
+    validations:
+      required: true
+  - type: textarea
+    id: recommendation
+    attributes:
+      label: Recommendation
+      description: The recommended option and why.
+    validations:
+      required: true
+  - type: textarea
+    id: tradeoffs
+    attributes:
+      label: Trade-offs
+      description: Cost, risk, reversibility and what each option rules out.
+    validations:
+      required: true
