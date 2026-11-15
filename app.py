@@ -1,8 +1,31 @@
 """Tiny HTTP service used to exercise the AI factory end to end. Standard library only."""
 import json
 import os
+import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from urllib.parse import urlsplit
+
+PYPROJECT = Path(__file__).resolve().parent / "pyproject.toml"
+
+
+def read_version(pyproject: Path = PYPROJECT) -> str:
+    """Return [project].version from pyproject.toml (stdlib only; works on Python 3.10 without tomllib)."""
+    section = None
+    for line in pyproject.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        header = re.fullmatch(r"\[([^\[\]]+)\]", stripped)
+        if header:
+            section = header.group(1).strip()
+            continue
+        if section == "project":
+            match = re.fullmatch(r"""version\s*=\s*["']([^"']+)["']""", stripped)
+            if match:
+                return match.group(1)
+    raise ValueError(f"no [project].version in {pyproject}")
+
+
+VERSION = read_version()
 
 
 def handle(path: str) -> tuple[int, dict]:
@@ -15,6 +38,8 @@ def handle(path: str) -> tuple[int, dict]:
         return 200, {"service": "ai-factory-sandbox"}
     if route == "/health":
         return 200, {"status": "ok"}
+    if route == "/version":
+        return 200, {"version": VERSION}
     return 404, {"error": "not found"}
 
 
