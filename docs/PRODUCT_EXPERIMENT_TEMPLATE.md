@@ -1,5 +1,7 @@
 # Product Experiment Brief
 
+Companion templates (PRD, research, journeys, analytics, cost log, hour-24/48 decisions): docs/templates/README.md. Final verdict at hour 48: BUILD, PIVOT, KILL or INCONCLUSIVE.
+
 ## Idea / value proposition
 ## Target user and current alternative
 ## Evidence vs assumptions
