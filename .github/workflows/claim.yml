@@ -1,0 +1,36 @@
+name: claim
+# Interactive task claims (ADR 0010): a trusted author comments `/claim` or `/release`
+# as the first line of an issue comment. Decision logic lives in scripts/claim_logic.py.
+on:
+  issue_comment:
+    types: [created]
+permissions: {}
+concurrency:
+  group: claim-${{ github.event.issue.number }}
+  # Queue, never cancel: a second racing /claim must run after the first and be rejected.
+  cancel-in-progress: false
+jobs:
+  claim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    # Issues only (not PRs), trusted authors only, and a cheap prefix pre-filter.
+    # The exact first-line match happens in Python, which reads the event payload;
+    # the comment body is never interpolated into a shell step.
+    if: >-
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+      !github.event.issue.pull_request &&
+      (startsWith(github.event.comment.body, '/claim') || startsWith(github.event.comment.body, '/release'))
+    permissions:
+      issues: write
+      contents: read   # checkout only, to load scripts/claim_logic.py from the default branch
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Apply claim command
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/claim_logic.py
