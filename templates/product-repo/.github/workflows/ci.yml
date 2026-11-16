@@ -21,7 +21,7 @@ jobs:
       - run: make install
       - run: make test
 
-  secret-scan:                # required status check name: "secret-scan"
+  secret-scan:                # status check name: "secret-scan" (add it to branch protection to block merges)
     # Private repos on free/Pro plans get no GitHub secret scanning, so gitleaks runs here.
     # Fails on any finding. Reviewed false positives go in .gitleaks.toml (never real secrets).
     runs-on: ubuntu-latest
