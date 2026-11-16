@@ -1,0 +1,12 @@
+{
+  "name": "ship48-product",
+  "private": true,
+  "type": "module",
+  "description": "Ship48 product template. No runtime dependencies yet; tests use the built-in node:test runner.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "sh -c 'node --test tests/*\"$1\"*.test.js' --"
+  }
+}
