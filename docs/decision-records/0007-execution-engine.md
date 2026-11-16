@@ -1,5 +1,5 @@
 # ADR 0007 — Execution Engine: Reuse ai-work-orchestrator
-- Status: Proposed (needs owner approval; see the linked decision issue)
+- Status: Superseded (owner, 2026-11-16): the execution engine is jevo (ticket manager) + Zeroshot (builder with independent reviewers), which already runs this sandbox. ai-work-orchestrator changes (#23, #24, #25, #30, #32, #49) are closed.
 - Date: 2026-11-11
 
 ## Context (verified 2026-11-11)
