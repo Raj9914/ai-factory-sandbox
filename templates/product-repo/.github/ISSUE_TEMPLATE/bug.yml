@@ -1,0 +1,27 @@
+name: Ship48 bug
+description: Report a reproducible defect
+title: "[BUG] "
+labels: ["type:bug", "status:proposed"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not paste secrets, tokens or personal data. Redact screenshots and logs.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps and evidence
+      description: Environment (preview/beta URL, device, browser), steps, and the smoke or test output.
+    validations:
+      required: true

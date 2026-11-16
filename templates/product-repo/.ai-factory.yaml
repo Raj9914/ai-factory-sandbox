@@ -1,0 +1,4 @@
+# Verification commands the AI factory runs (inside its sandbox) before review.
+# Stack-agnostic: the Makefile contract defines what install and test mean for this product.
+verify:
+  - {name: install-and-test, run: "make install && make test", category: test}

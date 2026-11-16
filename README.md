@@ -12,6 +12,7 @@ This is a public sandbox pilot. It already contains a tiny Python app, tests and
 - Experiment: docs/48_HOUR_EXPERIMENT.md
 - Security: docs/SECURITY_AND_APPROVALS.md
 - Handoffs: docs/AGENT_HANDOFF_PROTOCOL.md
+- Product repository template: templates/product-repo/ (validate with python scripts/validate_template.py templates/product-repo)
 
 Claude Code reads CLAUDE.md and .claude/skills/. Codex reads AGENTS.md and .agents/skills/. Canonical skills are in skills/. ChatGPT playbook/plugin sources are in docs/CHATGPT_WEB_PLAYBOOK.md and chatgpt-plugin/skills/.
 

@@ -1,0 +1,127 @@
+name: Ship48 task
+description: Create an owned, testable product task (16-section ticket, see docs/templates/TASK_BREAKDOWN_TEMPLATE.md)
+title: "[TASK] "
+# Tasks always start as proposed. Only a human applies status:ready.
+labels: ["status:proposed", "type:task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fill every section so the task is executable without follow-up questions.
+        Section numbers follow `docs/templates/TASK_BREAKDOWN_TEMPLATE.md`. Section 1's title goes in the issue title above.
+        Do not put secrets or personal data in this issue.
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: "1. Title and priority."
+      options: ["P0", "P1", "P2", "P3"]
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective and business reason
+      description: "2. What this achieves and why; link the PRD section."
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: Background and existing implementation
+      description: "3. Relevant files, current behaviour and baseline output."
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Expected outcome
+      description: "4. What is true when the task is done."
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and exclusions
+      description: "5. In scope, out of scope and the file allowlist."
+    validations:
+      required: true
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner
+      description: "6. Single owner label."
+      options: ["agent:chatgpt", "agent:claude", "agent:codex", "agent:human"]
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and blocked-by issues
+      description: "7. Issues or PRs that must land first; write 'None' if there are none."
+    validations:
+      required: true
+  - type: textarea
+    id: affected
+    attributes:
+      label: Affected repositories, files and services
+      description: "8. Only these may change (whitelist)."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Implementation steps
+      description: "9. Ordered steps."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: "10. Measurable, observable with a command or manual step."
+    validations:
+      required: true
+  - type: textarea
+    id: verify
+    attributes:
+      label: Verification commands and expected results
+      description: "11. Exact commands (use the make contract) and the expected output of each."
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and operational considerations
+      description: "12. Secrets, permissions, protected paths, untrusted input."
+    validations:
+      required: true
+  - type: textarea
+    id: timebox
+    attributes:
+      label: Timebox and budget (estimates)
+      description: "13. Agent time and cost estimate, and when to stop and report BLOCKED."
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback / recovery
+      description: "14. How to undo the change."
+    validations:
+      required: true
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of Done
+      description: "15. Checklist, including review by someone other than the implementer and a human merge."
+    validations:
+      required: true
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Deliverables and next handoff
+      description: "16. What is handed over and to which owner."
+    validations:
+      required: true
