@@ -1,6 +1,5 @@
 """Tests for templates/product-repo/scripts/smoke.sh against real local HTTP servers (issue #53)."""
 import http.server
-import shutil
 import socket
 import subprocess
 import sys
@@ -14,9 +13,6 @@ ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = ROOT / "templates" / "product-repo"
 SCRIPT = TEMPLATE / "scripts" / "smoke.sh"
 ROUTES = TEMPLATE / "smoke-routes.txt"
-
-pytestmark = pytest.mark.skipif(shutil.which("bash") is None or shutil.which("curl") is None,
-                                reason="smoke.sh needs bash and curl")
 
 
 def free_port():
@@ -232,7 +228,6 @@ def test_template_routes_file_lists_root():
 
 # --- make smoke URL=... wraps the script ----------------------------------------
 
-@pytest.mark.skipif(shutil.which("make") is None, reason="make not installed")
 def test_make_smoke_wraps_script(static_server):
     result = subprocess.run(["make", "-s", "-C", str(TEMPLATE), "smoke", f"URL={static_server}"],
                             capture_output=True, text=True, timeout=90)
@@ -241,7 +236,6 @@ def test_make_smoke_wraps_script(static_server):
     assert summary_rows(result.stdout)["/"] == ("200", "PASS")
 
 
-@pytest.mark.skipif(shutil.which("make") is None, reason="make not installed")
 def test_make_smoke_fails_on_dead_url():
     result = subprocess.run(["make", "-s", "-C", str(TEMPLATE), "smoke", "URL=http://127.0.0.1:9"],
                             capture_output=True, text=True, timeout=90,
@@ -250,7 +244,6 @@ def test_make_smoke_fails_on_dead_url():
     assert "smoke: FAIL" in result.stdout
 
 
-@pytest.mark.skipif(shutil.which("make") is None, reason="make not installed")
 def test_make_smoke_without_url_prints_usage():
     result = subprocess.run(["make", "-s", "-C", str(TEMPLATE), "smoke"],
                             capture_output=True, text=True, timeout=30)
