@@ -1,0 +1,23 @@
+# gitleaks configuration for this product repository (used by the `secret-scan` CI job).
+#
+# Detection uses the full gitleaks default rule set. This file is the allowlist for
+# reviewed false positives only. Never allowlist a real secret: rotate it and remove it.
+# Every entry needs a reason and the issue/PR where a human reviewed it. Keep entries as
+# narrow as possible (one file or one exact value), never a whole directory or rule.
+
+title = "product repository gitleaks config"
+
+[extend]
+useDefault = true
+
+# Uncomment and fill in only after review. An empty allowlist is rejected by gitleaks,
+# so keep this block commented out until there is a real entry.
+#
+# [allowlist]
+# description = "Reviewed false positives"
+# # Exact files (regex, anchored), e.g. a test fixture holding an obviously fake value.
+# paths = ['''^tests/fixtures/fake-credentials\.txt$''']
+# # Exact values (regex, anchored) that are known placeholders.
+# regexes = ['''^PLACEHOLDER_VALUE$''']
+# # Specific commits already reviewed (full SHAs).
+# commits = []
