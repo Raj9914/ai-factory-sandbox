@@ -1,0 +1,30 @@
+name: Ship48 feedback
+description: Record user or tester feedback for the current experiment (placeholder form)
+title: "[FEEDBACK] "
+labels: ["type:feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Placeholder form. The final feedback fields and routing are defined by a later factory task.
+        Do not include names, emails or other personal data; summarise and anonymise.
+  - type: input
+    id: experiment
+    attributes:
+      label: Experiment ID
+      placeholder: "<slug>-<YYYYMMDD>"
+    validations:
+      required: true
+  - type: textarea
+    id: feedback
+    attributes:
+      label: Feedback (quote or summary)
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source channel
+      description: Where the feedback came from (form, interview, store review, forum).
+    validations:
+      required: false
