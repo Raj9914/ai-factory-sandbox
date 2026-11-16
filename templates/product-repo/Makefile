@@ -30,8 +30,7 @@ build:
 
 smoke:
 	@test -n "$(URL)" || { echo "usage: make smoke URL=<base-url>"; exit 2; }
-	@curl --fail --silent --show-error --location --max-time 15 --output /dev/null "$(URL)"
-	@echo "smoke: $(URL) responded"
+	@bash scripts/smoke.sh "$(URL)"
 
 clean:
 	@rm -rf $(DIST)

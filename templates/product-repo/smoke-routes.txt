@@ -1,0 +1,5 @@
+# Routes checked by scripts/smoke.sh after /health (each must return HTTP 200).
+# One path per line, relative to the base URL. Blank lines and # comments are ignored.
+# Add the product's core journey routes here, e.g. /login or /api/status.
+# Never list routes that need auth headers, cookies or secrets.
+/
