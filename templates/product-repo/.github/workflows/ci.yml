@@ -15,5 +15,8 @@ jobs:
           persist-credentials: false
       # Add pinned (full commit SHA) setup actions for the product's stack here,
       # e.g. setup-node or setup-python. Never use a tag or branch reference.
+      # Offline design record check: every screen in design/screens.yml needs a Figma URL,
+      # node id, version and state coverage. Passes when no inventory exists yet.
+      - run: python3 scripts/validate_design_records.py design/screens.yml
       - run: make install
       - run: make test
