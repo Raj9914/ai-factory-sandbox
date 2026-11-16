@@ -1,16 +1,11 @@
 """Runs the product template's analytics tests (issue #60) the way the issue verifies them:
 ``cd templates/product-repo && npm test -- analytics``."""
 import re
-import shutil
 import subprocess
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = ROOT / "templates" / "product-repo"
-
-pytestmark = pytest.mark.skipif(shutil.which("npm") is None, reason="npm/node not installed")
 
 
 def run_npm_test(*args):
@@ -21,8 +16,9 @@ def run_npm_test(*args):
 def counts(stdout):
     found = {}
     for key in ("tests", "pass", "fail"):
-        match = re.search(rf"^# {key} (\d+)$", stdout, re.MULTILINE)
-        assert match, f"no '# {key}' line in output:\n{stdout}"
+        # TAP reporter prints "# tests 12"; the spec reporter (newer Node) prints "ℹ tests 12".
+        match = re.search(rf"^(?:#|ℹ) {key} (\d+)$", stdout, re.MULTILINE)
+        assert match, f"no '{key}' summary line in output:\n{stdout}"
         found[key] = int(match.group(1))
     return found
 
