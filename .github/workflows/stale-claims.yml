@@ -1,0 +1,41 @@
+name: stale-claims
+# Stale-claim detector (ADR 0010): flags `status:claimed` / `status:in_progress` issues with
+# no issue or linked-PR activity for longer than the threshold (default 4 h) by adding
+# `status:blocked` and one comment per stale episode. It never removes a claim or reassigns.
+# Logic lives in scripts/stale_claims.py. Rollback: disable this workflow.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      threshold_minutes:
+        description: "Staleness threshold in minutes (default 240 = 4 h)"
+        required: false
+        default: "240"
+        type: string
+permissions: {}
+concurrency:
+  group: stale-claims
+  # Queue, never cancel, so two overlapping runs cannot both post a comment.
+  cancel-in-progress: false
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      pull-requests: read
+      contents: read   # checkout only, to load scripts/stale_claims.py
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Flag stale claims
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Passed via env (never interpolated into the shell); validated in Python.
+          STALE_THRESHOLD_MINUTES: ${{ inputs.threshold_minutes || '240' }}
+        run: python scripts/stale_claims.py
