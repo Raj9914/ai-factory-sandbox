@@ -1,5 +1,5 @@
 # ADR 0010 — Task Claim, Lock, Release and Recovery
-- Status: Proposed (needs owner approval)
+- Status: Accepted (owner, 2026-11-16)
 - Date: 2026-11-11
 
 ## Context

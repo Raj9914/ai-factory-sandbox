@@ -1,5 +1,5 @@
 # ADR 0012 — Analytics, User Feedback and Cost Tracking
-- Status: Proposed (needs owner approval)
+- Status: Accepted (owner, 2026-11-16)
 - Date: 2026-11-11
 
 ## Context

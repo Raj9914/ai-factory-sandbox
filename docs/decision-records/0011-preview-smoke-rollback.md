@@ -1,5 +1,5 @@
 # ADR 0011 — Preview Deployment, Smoke Tests and Rollback
-- Status: Proposed (needs owner approval)
+- Status: Accepted (owner, 2026-11-16)
 - Date: 2026-11-11
 
 ## Context
