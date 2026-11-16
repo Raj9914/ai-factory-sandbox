@@ -142,6 +142,26 @@ def test_template_ci_runs_make_test_with_read_only_contents():
     assert "write" not in text
 
 
+def test_template_ci_runs_digest_pinned_gitleaks_secret_scan():
+    text = (TEMPLATE / CI).read_text(encoding="utf-8")
+    job = text.split("\n  secret-scan:", 1)[1]
+    assert re.search(r"GITLEAKS_IMAGE: zricethezav/gitleaks@sha256:[0-9a-f]{64}\n", job)
+    assert "fetch-depth: 0" in job and "persist-credentials: false" in job
+    assert 'scan git --log-opts="${BASE_SHA}..${HEAD_SHA}" .' in job
+    assert "scan dir ." in job
+    assert "--config /repo/.gitleaks.toml --redact" in job
+    assert "continue-on-error" not in job and "--exit-code 0" not in job  # findings must fail the job
+    run_script = job.split("run: |", 1)[1]
+    assert "${{" not in run_script  # event data reaches the shell only through env vars
+
+
+def test_template_gitleaks_config_extends_default_rules_with_no_active_allowlist():
+    config = (TEMPLATE / ".gitleaks.toml").read_text(encoding="utf-8")
+    assert "[extend]\nuseDefault = true\n" in config
+    active = [line for line in config.splitlines() if line.strip() and not line.lstrip().startswith("#")]
+    assert not any("allowlist" in line for line in active)
+
+
 def test_template_copies_factory_prd_template():
     prd = (ROOT / "docs/templates/PRD_TEMPLATE.md").read_text(encoding="utf-8")
     assert (TEMPLATE / "docs/PRD.md").read_text(encoding="utf-8") == prd

@@ -20,3 +20,35 @@ jobs:
       - run: python3 scripts/validate_design_records.py design/screens.yml
       - run: make install
       - run: make test
+
+  secret-scan:                # status check name: "secret-scan" (add it to branch protection to block merges)
+    # Private repos on free/Pro plans get no GitHub secret scanning, so gitleaks runs here.
+    # Fails on any finding. Reviewed false positives go in .gitleaks.toml (never real secrets).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0      # full history so the PR / push commit range can be scanned
+          persist-credentials: false
+      - name: gitleaks (PR diff or pushed commits)
+        env:
+          # Official gitleaks image pinned by content digest (immutable; never a tag).
+          GITLEAKS_IMAGE: zricethezav/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          scan() {
+            docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp \
+              -v "$PWD:/repo" -w /repo "$GITLEAKS_IMAGE" \
+              "$@" --config /repo/.gitleaks.toml --redact --verbose --no-banner
+          }
+          if [ -n "${BASE_SHA:-}" ] && [ "$BASE_SHA" != "0000000000000000000000000000000000000000" ] \
+              && git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            echo "Scanning commits ${BASE_SHA}..${HEAD_SHA}"
+            scan git --log-opts="${BASE_SHA}..${HEAD_SHA}" .
+          else
+            echo "No usable base commit; scanning the checked-out tree"
+            scan dir .
+          fi
