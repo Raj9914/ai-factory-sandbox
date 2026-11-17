@@ -1,0 +1,39 @@
+{
+  "spec_version": 1,
+  "description": "Machine-readable analytics event spec. Mirrors the event catalogue in docs/templates/ANALYTICS_SPEC_TEMPLATE.md (copied to the product's analytics spec). src/analytics.js only sends events and properties listed here. Property types: string, number, integer, boolean. Optional 'values' restricts a property to an allowed list.",
+  "privacy": {
+    "pii": "none: no emails, phone numbers, names, precise location or free text in properties; the distinct ID is a random anonymous UUID",
+    "retention": "Set the PostHog project's event retention to the shortest period that still covers the hour-48 decision, and record the chosen value in the product's analytics spec. Delete the project when the experiment is killed."
+  },
+  "common_properties": {
+    "internal": { "type": "boolean", "required": false, "description": "true for team/test traffic; excluded by the documented filter" }
+  },
+  "events": {
+    "app_opened": {
+      "description": "First render of the entry screen.",
+      "properties": {
+        "source": { "type": "string", "required": true, "description": "utm_source, or \"direct\"" }
+      }
+    },
+    "activation": {
+      "description": "The user reached the product's activation moment, as defined in the PRD. Fired at most once per anonymous ID.",
+      "properties": {
+        "screen_id": { "type": "string", "required": true, "description": "Screen ID from the design inventory, e.g. S-02" }
+      }
+    },
+    "core_action_completed": {
+      "description": "The user completed the product's core action, as defined in the PRD.",
+      "properties": {
+        "screen_id": { "type": "string", "required": true, "description": "Screen ID from the design inventory" },
+        "duration_ms": { "type": "integer", "required": false, "description": "Time from action start to completion" }
+      }
+    },
+    "error_unhandled": {
+      "description": "An unhandled client error reached the global error handler. Never send the error message or stack (may contain user input).",
+      "properties": {
+        "error_type": { "type": "string", "required": true, "description": "Error constructor name, e.g. TypeError" },
+        "screen_id": { "type": "string", "required": false, "description": "Screen ID where the error happened" }
+      }
+    }
+  }
+}
