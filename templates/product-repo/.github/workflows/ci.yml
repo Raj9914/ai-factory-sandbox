@@ -18,6 +18,10 @@ jobs:
       # Offline design record check: every screen in design/screens.yml needs a Figma URL,
       # node id, version and state coverage. Passes when no inventory exists yet.
       - run: python3 scripts/validate_design_records.py design/screens.yml
+      # Offline decision record check: every experiments/*/decision-24h.md and decision-48h.md
+      # has exactly one allowed verdict, a human decider, a date and links to metrics.md and
+      # cost.md. Passes when no decision record exists yet.
+      - run: python3 scripts/validate_decisions.py experiments
       - run: make install
       - run: make test
 
