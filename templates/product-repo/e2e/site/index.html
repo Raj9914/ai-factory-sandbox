@@ -1,0 +1,66 @@
+<!doctype html>
+<!--
+  Example template page for the Playwright core-journey test (e2e/journey.spec.ts).
+  Served only when `make build` has not produced dist/index.html yet. Replace it by building
+  the real product into dist/; then update e2e/journey.spec.ts to the product's primary journey.
+  Plain HTML, no external requests, no analytics, no personal data.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ship48 product</title>
+</head>
+<body>
+  <main>
+    <section id="landing" aria-labelledby="landing-title">
+      <h1 id="landing-title">Ship48 product</h1>
+      <p>Replace this page with the product. The end-to-end test walks its primary journey.</p>
+      <button type="button" id="start">Get started</button>
+    </section>
+
+    <section id="goal-step" aria-labelledby="goal-title" hidden>
+      <h2 id="goal-title">Tell us your goal</h2>
+      <form id="goal-form" novalidate>
+        <label for="goal">What do you want to try?</label>
+        <input id="goal" name="goal" type="text" maxlength="200" autocomplete="off">
+        <p id="goal-error" role="alert" hidden>Enter a goal to continue.</p>
+        <button type="submit">Continue</button>
+      </form>
+    </section>
+
+    <section id="done" aria-labelledby="done-title" hidden>
+      <h2 id="done-title">Done</h2>
+      <p role="status" id="done-status"></p>
+    </section>
+  </main>
+
+  <script>
+    const landing = document.getElementById('landing');
+    const goalStep = document.getElementById('goal-step');
+    const done = document.getElementById('done');
+    const goal = document.getElementById('goal');
+    const error = document.getElementById('goal-error');
+
+    document.getElementById('start').addEventListener('click', () => {
+      landing.hidden = true;
+      goalStep.hidden = false;
+      goal.focus();
+    });
+
+    document.getElementById('goal-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!goal.value.trim()) {
+        error.hidden = false;
+        goal.setAttribute('aria-invalid', 'true');
+        return;
+      }
+      error.hidden = true;
+      goal.removeAttribute('aria-invalid');
+      goalStep.hidden = true;
+      done.hidden = false;
+      document.getElementById('done-status').textContent = "You're all set.";
+    });
+  </script>
+</body>
+</html>

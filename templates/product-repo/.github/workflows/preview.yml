@@ -3,6 +3,7 @@ name: preview
 # Builds the PR head commit, deploys dist/ to the Pages branch `pr-<number>`, runs
 # `make smoke` against the preview, records a GitHub Deployment (environment "preview")
 # and keeps one PR comment up to date with the URL, commit SHA and smoke result.
+# The `e2e` job then runs the Playwright core-journey test against that preview (e2e/README.md).
 #
 # Security: runs on the plain `pull_request` event only (never the _target variant), and only for branches
 # in this repository; fork PRs skip the job, so they never reach the `preview` environment
@@ -24,6 +25,8 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository && vars.CLOUDFLARE_PAGES_PROJECT != ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
     environment:
       name: preview
       url: ${{ steps.deploy.outputs.url }}
@@ -135,3 +138,44 @@ jobs:
           else
             gh api "repos/$REPO/issues/$PR_NUMBER/comments" -f body="$body" >/dev/null
           fi
+
+  e2e:
+    # Playwright end-to-end test of the core journey (e2e/journey.spec.ts) after the preview
+    # deploy, against the exact preview of this commit. When the preview job is skipped (fork
+    # PRs, or no Pages project yet) it tests the local build instead. No secrets, no
+    # environment. Add "e2e" to branch protection to make a failure block merge.
+    # Rollback: delete this job.
+    needs: preview
+    if: ${{ !cancelled() && needs.preview.result != 'failure' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PLAYWRIGHT_VERSION: "1.55.0"   # pinned @playwright/test release; bump deliberately
+      E2E_BASE_URL: ${{ needs.preview.outputs.deployment_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      # Same pinned setup actions as ci.yml for the product's stack go here.
+      - run: make install
+      - run: make build
+      # Once the product lists @playwright/test in its lockfile, drop the npm install line.
+      - name: Install Playwright and Chromium
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock --ignore-scripts "@playwright/test@$PLAYWRIGHT_VERSION"
+          npx playwright install --with-deps chromium
+      - name: Core journey (Playwright)
+        timeout-minutes: 2
+        run: npx playwright test
+      - name: Upload Playwright trace on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-trace-${{ github.run_attempt }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
