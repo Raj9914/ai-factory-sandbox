@@ -6,7 +6,8 @@ Usage: python scripts/validate_template.py [TEMPLATE_DIR]   (default: templates/
 Checks: required files present, TEMPLATE_VERSION is semver, Makefile declares the
 install/test/build/smoke contract, .ai-factory.yaml verifies with `make install && make test`,
 every workflow declares top-level `permissions`, never uses `pull_request_target`, and pins
-every action to a 40-character commit SHA, and no file contains an obvious secret.
+every action to a 40-character commit SHA, the feedback issue form applies `type:feedback` and
+has no name/email/phone/address/contact field, and no file contains an obvious secret.
 """
 from pathlib import Path
 import re
@@ -33,6 +34,10 @@ SECRET_PATTERNS = [
     re.compile(r"sk-[A-Za-z0-9_-]{20,}"),                 # OpenAI/Anthropic-style API keys
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
 ]
+FEEDBACK_FORM = ".github/ISSUE_TEMPLATE/feedback.yml"
+FEEDBACK_LABEL = "type:feedback"
+FORM_FIELD_RE = re.compile(r"^\s*(?:-\s+)?(id|label|description|placeholder):\s*(.*)$")
+PII_FIELD_RE = re.compile(r"e-?mail|phone|\b(?:user|first|last|full|given|family|sur)?[ _-]?name\b|address|contact", re.I)
 
 
 def check_uses(ref: str) -> bool:
@@ -55,6 +60,24 @@ def validate_workflow(text: str, rel: str) -> list[str]:
         m = USES_RE.match(line)
         if m and not check_uses(m.group(1)):
             errors.append(f"action not pinned to a 40-char commit SHA: {rel}:{number}: {m.group(1)}")
+    return errors
+
+
+def validate_feedback_form(text: str) -> list[str]:
+    """The feedback form must carry the type:feedback label and ask for no personal data:
+    no body field may be named or described as a name, email, phone, address or contact."""
+    errors = []
+    lines = text.replace("\r\n", "\n").splitlines()
+    if not any(line.startswith("labels:") and FEEDBACK_LABEL in line for line in lines):
+        errors.append(f"{FEEDBACK_FORM} must apply the {FEEDBACK_LABEL!r} label")
+    in_body = False
+    for number, line in enumerate(lines, 1):
+        if line.startswith("body:"):
+            in_body = True
+            continue
+        m = FORM_FIELD_RE.match(line) if in_body else None
+        if m and PII_FIELD_RE.search(m.group(2)):
+            errors.append(f"{FEEDBACK_FORM}:{number}: field asks for personal data: {line.strip()}")
     return errors
 
 
@@ -84,6 +107,10 @@ def validate(root: Path = DEFAULT_TEMPLATE) -> list[str]:
     factory = root / ".ai-factory.yaml"
     if factory.is_file() and VERIFY_COMMAND not in factory.read_text(encoding="utf-8"):
         errors.append(f".ai-factory.yaml verify must run {VERIFY_COMMAND!r}")
+
+    feedback = root / FEEDBACK_FORM
+    if feedback.is_file():
+        errors += validate_feedback_form(feedback.read_text(encoding="utf-8"))
 
     workflows_dir = root / ".github" / "workflows"
     workflows = sorted([*workflows_dir.glob("*.yml"), *workflows_dir.glob("*.yaml")])
