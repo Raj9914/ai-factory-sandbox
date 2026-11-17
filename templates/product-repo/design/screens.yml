@@ -1,0 +1,54 @@
+# Design record inventory: one entry per approved Figma frame (example; replace with the product's).
+#
+# Read by two tools (same small YAML subset: block mappings/lists, inline [a, b] lists, quoted or
+# plain scalars, # comments; no anchors, flow mappings or multi-line strings):
+#   scripts/validate_design_records.py  CI check that every frame has a Figma URL, node id, version
+#                                       and state coverage (see that script for those fields).
+#   scripts/screenshots.mjs             preview.yml job that screenshots each screen with a `route`
+#                                       at its `viewport` and links the PNG to the Figma frame.
+#
+# Screenshot fields:
+#   viewports        top level; name -> "<width>x<height>" in CSS pixels. Use the Figma frame sizes.
+#   route            path on the preview, starting with "/" (same origin only; no auth, cookies or
+#                    secrets). Screens without a route (e.g. modals) are listed but not captured.
+#   viewport         one name from `viewports`. A Figma frame has one size, so a screen designed
+#                    for mobile and desktop is two entries with two node ids.
+# Each screenshot is saved as <id>-<viewport>.png; ids may use letters, digits, "-" and "_".
+viewports:
+  mobile: 390x844
+  desktop: 1440x900
+screens:
+  - id: S1
+    name: Home (mobile)
+    route: /
+    viewport: mobile
+    figma_url: https://www.figma.com/design/FILEKEY/Product?node-id=1-2
+    node_id: "1:2"
+    version: "2026-11-11 v1"
+    states: [default, loading, empty, error]
+  - id: S2
+    name: Home (desktop)
+    route: /
+    viewport: desktop
+    figma_url: https://www.figma.com/design/FILEKEY/Product?node-id=1-3
+    node_id: "1:3"
+    version: "2026-11-11 v1"
+    states: [default, loading, empty, error]
+  - id: S3
+    name: Sign up (mobile)
+    route: /signup/
+    viewport: mobile
+    figma_url: https://www.figma.com/design/FILEKEY/Product?node-id=2-2
+    node_id: "2:2"
+    version: "2026-11-11 v1"
+    states: [default, loading, error]
+    not_applicable: [empty]
+  - id: S4
+    name: Sign up (desktop)
+    route: /signup/
+    viewport: desktop
+    figma_url: https://www.figma.com/design/FILEKEY/Product?node-id=2-3
+    node_id: "2:3"
+    version: "2026-11-11 v1"
+    states: [default, loading, error]
+    not_applicable: [empty]
