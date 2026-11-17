@@ -1,6 +1,11 @@
 # Build output (make build)
 dist/
 
+# Node dependencies and Playwright output (traces, screenshots, HTML report)
+node_modules/
+test-results/
+playwright-report/
+
 # Local environment and secrets
 .env
 .env.*
