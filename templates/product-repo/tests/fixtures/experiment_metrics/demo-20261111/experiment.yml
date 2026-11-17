@@ -1,0 +1,21 @@
+# Fixture experiment for tests/test_experiment_metrics.py (schema: scripts/experiment_metrics.py).
+id: demo-20261111
+hour_0: 2026-11-11T09:00:00Z
+metrics:
+  - name: activation_rate
+    label: Activation rate
+    numerator: activation
+    denominator: app_opened
+    threshold: 0.25
+    min_sample: 30
+  - name: core_action_rate
+    label: "Core action rate"
+    numerator: core_action_completed
+    denominator: activation
+    threshold: 0.5
+  - name: error_rate  # zero denominator in counts.json -> INSUFFICIENT DATA
+    label: Errors per core action
+    numerator: error_unhandled
+    denominator: core_action_completed
+    threshold: 0.05
+    direction: at_most

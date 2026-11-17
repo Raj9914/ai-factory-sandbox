@@ -1,0 +1,60 @@
+{
+  "experiment": "demo-20261111",
+  "hour_0": "2026-11-11T09:00:00Z",
+  "since": "2026-11-11T09:00:00Z",
+  "until": "2026-11-13T09:00:00Z",
+  "source": "fixture `counts.json`",
+  "counts": {
+    "activation": 12,
+    "app_opened": 40,
+    "core_action_completed": 0,
+    "error_unhandled": 3
+  },
+  "metrics": [
+    {
+      "name": "activation_rate",
+      "label": "Activation rate",
+      "numerator_event": "activation",
+      "denominator_event": "app_opened",
+      "numerator": 12,
+      "denominator": 40,
+      "sample_size": 40,
+      "min_sample": 30,
+      "threshold": 0.25,
+      "direction": "at_least",
+      "rate": 0.3,
+      "threshold_met": true,
+      "status": "MET"
+    },
+    {
+      "name": "core_action_rate",
+      "label": "Core action rate",
+      "numerator_event": "core_action_completed",
+      "denominator_event": "activation",
+      "numerator": 0,
+      "denominator": 12,
+      "sample_size": 12,
+      "min_sample": 1,
+      "threshold": 0.5,
+      "direction": "at_least",
+      "rate": 0.0,
+      "threshold_met": false,
+      "status": "NOT MET"
+    },
+    {
+      "name": "error_rate",
+      "label": "Errors per core action",
+      "numerator_event": "error_unhandled",
+      "denominator_event": "core_action_completed",
+      "numerator": 3,
+      "denominator": 0,
+      "sample_size": 0,
+      "min_sample": 1,
+      "threshold": 0.05,
+      "direction": "at_most",
+      "rate": null,
+      "threshold_met": null,
+      "status": "INSUFFICIENT DATA"
+    }
+  ]
+}
