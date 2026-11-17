@@ -19,6 +19,49 @@ jobs:
       - run: python -m pip install pip-audit && python -m pip_audit   # fails on known vulnerabilities
       - run: python -m pytest -q
 
+  template-screenshots:       # issue #41: real Playwright run of the template's screenshot script
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: templates/product-repo
+    env:
+      PLAYWRIGHT_VERSION: "1.56.1"   # keep equal to templates/product-repo/.github/workflows/preview.yml
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Playwright Chromium
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock --ignore-scripts "playwright@$PLAYWRIGHT_VERSION"
+          npx --no-install playwright install --with-deps chromium
+      - name: Serve a static fixture site on localhost:4173
+        run: |
+          set -euo pipefail
+          site="$RUNNER_TEMP/site"
+          mkdir -p "$site/signup"
+          printf '<!doctype html><title>Home</title><h1>Home</h1><p>Template example</p>\n' > "$site/index.html"
+          printf '<!doctype html><title>Sign up</title><h1>Sign up</h1><form><input aria-label="Code"></form>\n' > "$site/signup/index.html"
+          nohup python3 -m http.server 4173 --directory "$site" > "$RUNNER_TEMP/http.log" 2>&1 &
+          for _ in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:4173/ && exit 0; sleep 0.5; done
+          cat "$RUNNER_TEMP/http.log"; exit 1
+      - name: Capture the example screens (issue verification command)
+        run: |
+          set -euo pipefail
+          node scripts/screenshots.mjs http://localhost:4173 design/screens.yml out/
+          count="$(ls out/*.png | wc -l)"
+          echo "png files: $count"
+          [ "$count" -ge 4 ]
+      - name: Upload screenshots artifact
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: template-screenshots
+          path: templates/product-repo/out/
+          if-no-files-found: warn
+          retention-days: 7
+
   test-integrity:             # fails if tests are deleted or skipped without owner approval
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest

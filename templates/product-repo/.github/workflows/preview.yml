@@ -3,6 +3,9 @@ name: preview
 # Builds the PR head commit, deploys dist/ to the Pages branch `pr-<number>`, runs
 # `make smoke` against the preview, records a GitHub Deployment (environment "preview")
 # and keeps one PR comment up to date with the URL, commit SHA and smoke result.
+# The `screenshots` job then captures every routed screen in design/screens.yml at its
+# viewport (scripts/screenshots.mjs), uploads the PNGs as an artifact and keeps a second
+# PR comment with a table linking each screenshot to its Figma frame.
 #
 # Security: runs on the plain `pull_request` event only (never the _target variant), and only for branches
 # in this repository; fork PRs skip the job, so they never reach the `preview` environment
@@ -27,6 +30,8 @@ jobs:
     environment:
       name: preview
       url: ${{ steps.deploy.outputs.url }}
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
     env:
       WRANGLER_VERSION: "4.20.0"   # pinned Wrangler release; bump deliberately
       PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
@@ -135,3 +140,86 @@ jobs:
           else
             gh api "repos/$REPO/issues/$PR_NUMBER/comments" -f body="$body" >/dev/null
           fi
+
+  screenshots:
+    # Runs only after a successful deploy + smoke of this PR's preview (same-repo PRs only,
+    # inherited from `preview`). No secrets: the browser gets only the public preview URL.
+    needs: preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PLAYWRIGHT_VERSION: "1.56.1"   # pinned Playwright release; bump deliberately
+      PREVIEW_URL: ${{ needs.preview.outputs.deployment_url }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      SCREENSHOT_TIMEOUT_MS: "30000"   # per screen (navigation + screenshot)
+      SCREENSHOT_BUDGET_MS: "420000"   # whole capture step
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Check for design/screens.yml
+        id: spec
+        run: |
+          if [ -f design/screens.yml ]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::No design/screens.yml; no screenshots to capture"; echo "present=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Install pinned Playwright Chromium
+        if: steps.spec.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-package-lock --ignore-scripts "playwright@$PLAYWRIGHT_VERSION"
+          npx --no-install playwright install --with-deps chromium
+
+      - name: Capture screenshots at spec viewports
+        id: capture
+        if: steps.spec.outputs.present == 'true'
+        run: node scripts/screenshots.mjs "$PREVIEW_URL" design/screens.yml screenshots/
+
+      - name: Upload screenshots artifact
+        id: upload
+        if: always() && steps.spec.outputs.present == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: preview-screenshots-pr-${{ github.event.pull_request.number }}
+          path: screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upsert PR comment (screenshot table)
+        if: always() && steps.spec.outputs.present == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { pathToFileURL } = require('url');
+            const workspace = process.env.GITHUB_WORKSPACE;
+            const { buildComment, MARKER } = await import(
+              pathToFileURL(path.join(workspace, 'scripts', 'screenshots.mjs')).href);
+            let manifest = null;
+            try {
+              manifest = JSON.parse(fs.readFileSync(path.join(workspace, 'screenshots', 'screens.json'), 'utf8'));
+            } catch (error) {
+              core.warning(`No screenshot manifest: ${error.message}`);
+            }
+            const body = buildComment(manifest, {
+              artifactUrl: process.env.ARTIFACT_URL || '',
+              runUrl: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              sha: process.env.HEAD_SHA,
+            });
+            const { owner, repo } = context.repo;
+            const issue_number = Number(process.env.PR_NUMBER);
+            const comments = await github.paginate(github.rest.issues.listComments,
+              { owner, repo, issue_number, per_page: 100 });
+            const existing = comments.find((c) => c.user && c.user.login === 'github-actions[bot]'
+              && typeof c.body === 'string' && c.body.startsWith(MARKER));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
