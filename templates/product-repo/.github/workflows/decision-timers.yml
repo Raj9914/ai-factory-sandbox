@@ -1,0 +1,32 @@
+name: decision-timers
+# Hour-24 and hour-48 decision reminders. Every hour, for each experiments/<id>/experiment.yml,
+# opens one `type:decision` issue owned by `agent:human` once hour_0 + 24 h and hour_0 + 48 h
+# have passed, prefilled from docs/templates/HOUR_24/48_DECISION_TEMPLATE.md with links to the
+# latest metrics.md and cost.md. Idempotent: an issue is never opened twice for a checkpoint
+# (hidden marker search). It never decides anything. Logic: scripts/decision_timers.py.
+# Rollback: disable this workflow.
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+permissions: {}
+concurrency:
+  group: decision-timers
+  # Queue, never cancel, so two overlapping runs cannot both open the same issue.
+  cancel-in-progress: false
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write    # the only write permission: search and open decision issues
+      contents: read   # checkout only, to read experiments/*/experiment.yml and the templates
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Open due decision issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch || github.ref_name }}
+        run: python3 scripts/decision_timers.py experiments
