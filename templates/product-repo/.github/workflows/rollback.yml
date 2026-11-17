@@ -1,0 +1,105 @@
+name: rollback
+# One-step rollback (docs/runbooks/DEPLOYMENT_AND_ROLLBACK.md in the factory repository).
+#   1. plan:     scripts/rollback_target.py reads the GitHub Deployments of the environment and
+#                picks the last successful deployment SHA before the current one.
+#   2. deploy:   calls deploy.yml with that SHA, which rebuilds it, records a new Deployment
+#                (payload rollback_from=<current SHA>), deploys it and runs `make smoke`.
+#                Uses the same GitHub Environment, so a production rollback waits for human approval.
+#   3. report:   comments the result on the incident issue, when one is given.
+# Run from main: gh workflow run rollback.yml -f environment=<staging|production> [-f incident=<issue number>]
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to roll back (production waits for human approval)"
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+      incident:
+        description: "Incident issue number to comment on (optional)"
+        required: false
+        default: ""
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: rollback-${{ inputs.environment }}
+  cancel-in-progress: false
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: read
+    outputs:
+      current_sha: ${{ steps.find.outputs.current_sha }}
+      target_sha: ${{ steps.find.outputs.target_sha }}
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      INCIDENT: ${{ inputs.incident }}
+      RUN_REF: ${{ github.ref }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check inputs
+        run: |
+          set -euo pipefail
+          [ "$RUN_REF" = refs/heads/main ] || { echo "::error::run rollback from main (got $RUN_REF)"; exit 1; }
+          [ -z "$INCIDENT" ] || [[ "$INCIDENT" =~ ^[1-9][0-9]{0,9}$ ]] || { echo "::error::incident must be an issue number"; exit 1; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Find last successful deployment before the current one
+        id: find
+        run: |
+          set -euo pipefail
+          python3 scripts/rollback_target.py --environment "$ENVIRONMENT" | tee -a "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: plan
+    permissions:
+      contents: read
+      deployments: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: ${{ inputs.environment }}
+      sha: ${{ needs.plan.outputs.target_sha }}
+      rollback_from: ${{ needs.plan.outputs.current_sha }}
+
+  report:
+    needs: [plan, deploy]
+    if: always() && inputs.incident != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      INCIDENT: ${{ inputs.incident }}
+      PLAN: ${{ needs.plan.result }}
+      DEPLOY: ${{ needs.deploy.result }}
+      SMOKE: ${{ needs.deploy.outputs.smoke }}
+      URL: ${{ needs.deploy.outputs.url }}
+      FROM_SHA: ${{ needs.plan.outputs.current_sha }}
+      TO_SHA: ${{ needs.plan.outputs.target_sha }}
+      REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Comment on the incident issue
+        run: |
+          set -euo pipefail
+          [[ "$INCIDENT" =~ ^[1-9][0-9]{0,9}$ ]] || { echo "::error::incident must be an issue number"; exit 1; }
+          if [ "$DEPLOY" = success ] && [ "$SMOKE" = success ]; then result="rolled back, smoke: pass"
+          elif [ "$PLAN" != success ]; then result="FAILED: no rollback target found (see run)"
+          else result="FAILED: deploy $DEPLOY, smoke: ${SMOKE:-not run}"; fi
+          body="<!-- ship48-rollback -->
+          ### Rollback: $ENVIRONMENT
+          | | |
+          |---|---|
+          | Result | **$result** |
+          | From SHA | \`${FROM_SHA:-unknown}\` |
+          | To SHA | \`${TO_SHA:-unknown}\` |
+          | URL | ${URL:-not deployed} |
+          | Run | $GITHUB_SERVER_URL/$REPO/actions/runs/$GITHUB_RUN_ID |"
+          gh api "repos/$REPO/issues/$INCIDENT/comments" -f body="$body" >/dev/null
