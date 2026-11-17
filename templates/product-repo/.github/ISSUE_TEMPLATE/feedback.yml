@@ -1,30 +1,38 @@
-name: Ship48 feedback
-description: Record user or tester feedback for the current experiment (placeholder form)
+name: Feedback
+description: Tell us how the product worked for you (anonymous; no personal details)
 title: "[FEEDBACK] "
 labels: ["type:feedback"]
 body:
   - type: markdown
     attributes:
       value: |
-        Placeholder form. The final feedback fields and routing are defined by a later factory task.
-        Do not include names, emails or other personal data; summarise and anonymise.
-  - type: input
-    id: experiment
+        Thanks for trying the product. This form is anonymous by design (ADR 0012).
+        Please do not include personal details or contact details of anyone, including yourself.
+        Testers without a GitHub account can use the in-product Feedback link, which may point to a survey instead.
+  - type: dropdown
+    id: rating
     attributes:
-      label: Experiment ID
-      placeholder: "<slug>-<YYYYMMDD>"
+      label: Overall rating
+      description: 1 = very poor, 5 = excellent.
+      options:
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+        - "5"
     validations:
       required: true
   - type: textarea
-    id: feedback
+    id: goal
     attributes:
-      label: Feedback (quote or summary)
+      label: What were you trying to do?
+      placeholder: "For example: create my first list and share it."
     validations:
       required: true
-  - type: input
-    id: source
+  - type: textarea
+    id: outcome
     attributes:
-      label: Source channel
-      description: Where the feedback came from (form, interview, store review, forum).
+      label: What happened?
+      description: What worked, what did not, and anything that surprised you.
     validations:
-      required: false
+      required: true
